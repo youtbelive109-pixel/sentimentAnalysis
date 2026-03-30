@@ -12,7 +12,6 @@ interface Comment {
 }
 
 interface AnalyzeResponse {
-  video_id: string;
   comment_count: number;
   comments: Comment[];
 }
@@ -88,7 +87,7 @@ export default function Home() {
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 text-xs font-medium text-zinc-500 bg-[#111] border border-[#222] rounded-full px-3 py-1 mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Powered by DistilRoBERTa
+            Powered by Twitter-RoBERTa
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-white leading-tight">
             YouTube Sentiment<br />Analyzer

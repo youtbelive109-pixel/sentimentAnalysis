@@ -6,6 +6,7 @@ from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+import torch
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from transformers import pipeline
@@ -26,11 +27,11 @@ async def lifespan(app: FastAPI):
     print("Loading sentiment model...")
     sentiment_pipeline = pipeline(
         "sentiment-analysis",
-        model="lxyuan/distilbert-base-multilingual-cased-sentiments-student",
+        model="cardiffnlp/twitter-roberta-base-sentiment-latest",
+        torch_dtype=torch.float16,
     )
     print("Model ready.")
     yield
-    # Nothing to clean up
 
 
 app = FastAPI(title="YouTube Comment Sentiment Analyzer", lifespan=lifespan)
