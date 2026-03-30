@@ -62,7 +62,7 @@ export default function Home() {
         setData(json);
       }
     } catch {
-      setError('Could not reach the backend. Make sure it is running on port 8000.');
+      setError('Could not reach the backend.');
     } finally {
       setLoading(false);
     }
