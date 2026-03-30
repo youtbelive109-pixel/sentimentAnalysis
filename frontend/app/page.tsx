@@ -18,26 +18,10 @@ interface AnalyzeResponse {
 }
 
 const SENTIMENT = {
-  POSITIVE: {
-    label: 'Positive',
-    pill: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
-    dot: 'bg-emerald-400',
-  },
-  NEGATIVE: {
-    label: 'Negative',
-    pill: 'bg-red-500/15 text-red-400 border border-red-500/25',
-    dot: 'bg-red-400',
-  },
-  NEUTRAL: {
-    label: 'Neutral',
-    pill: 'bg-amber-500/15 text-amber-400 border border-amber-500/25',
-    dot: 'bg-amber-400',
-  },
-  UNKNOWN: {
-    label: 'Unknown',
-    pill: 'bg-zinc-500/15 text-zinc-400 border border-zinc-500/25',
-    dot: 'bg-zinc-500',
-  },
+  POSITIVE: { label: 'Positive', rgb: '16, 185, 129',  dot: 'bg-emerald-400' },
+  NEGATIVE: { label: 'Negative', rgb: '239, 68, 68',   dot: 'bg-red-400'     },
+  NEUTRAL:  { label: 'Neutral',  rgb: '245, 158, 11',  dot: 'bg-amber-400'   },
+  UNKNOWN:  { label: 'Unknown',  rgb: '113, 113, 122', dot: 'bg-zinc-500'    },
 };
 
 export default function Home() {
@@ -300,24 +284,30 @@ function StatCard({
 
 function CommentCard({ comment }: { comment: Comment }) {
   const cfg = SENTIMENT[comment.sentiment] ?? SENTIMENT.UNKNOWN;
-  // Map confidence [0.33–1.0] to opacity [0.45–1.0]
-  const opacity = Math.min(1, Math.max(0.45, 0.45 + 0.55 * ((comment.score - 0.33) / 0.67)));
+  // Map confidence [0.33–1.0] to background opacity [0.07–0.35]
+  const bgOpacity = 0.07 + 0.28 * ((comment.score - 0.33) / 0.67);
+  const clampedBg = Math.min(0.35, Math.max(0.07, bgOpacity));
 
   return (
     <div
-      style={{ opacity }}
-      className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl px-4 py-3 hover:border-[#2a2a2a] transition-colors duration-150"
+      style={{
+        backgroundColor: `rgba(${cfg.rgb}, ${clampedBg})`,
+        borderColor: `rgba(${cfg.rgb}, 0.2)`,
+      }}
+      className="border rounded-xl px-4 py-3 transition-colors duration-150"
     >
       <div className="flex items-start justify-between gap-4">
-        <p className="text-sm text-zinc-300 leading-relaxed flex-1 min-w-0 break-words">
+        <p className="text-sm text-zinc-200 leading-relaxed flex-1 min-w-0 break-words">
           {comment.text}
         </p>
         <div className="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
-          <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ${cfg.pill}`}>
+          {/* Sentiment label — dark bubble, white text, colored dot */}
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full bg-black/40 text-white border border-white/10">
             <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
             {cfg.label}
           </span>
-          <span className="text-[11px] text-zinc-700 tabular-nums">
+          {/* Confidence score — dark bubble, white text */}
+          <span className="text-[11px] font-medium tabular-nums px-2 py-0.5 rounded-full bg-black/40 text-white border border-white/10">
             {(comment.score * 100).toFixed(1)}%
           </span>
         </div>
