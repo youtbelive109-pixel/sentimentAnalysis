@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     print("Loading sentiment model...")
     sentiment_pipeline = pipeline(
         "sentiment-analysis",
-        model="cardiffnlp/twitter-roberta-base-sentiment-latest",
+        model="lxyuan/distilbert-base-multilingual-cased-sentiments-student",
     )
     print("Model ready.")
     yield
