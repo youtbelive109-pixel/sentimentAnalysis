@@ -54,7 +54,7 @@ export default function Home() {
     setData(null);
     try {
       const res = await fetch(
-        `http://localhost:8000/analyze?url=${encodeURIComponent(url.trim())}&order=${order}`
+        `https://sentimentanalysis-production-bcfe.up.railway.app/analyze?url=${encodeURIComponent(url.trim())}&order=${order}`
       );
       const json = await res.json();
       if (!res.ok) {
