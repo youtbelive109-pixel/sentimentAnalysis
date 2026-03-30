@@ -143,32 +143,38 @@ def fetch_comments(video_id: str, order: str = "time", max_results: int = 20) ->
 
 def classify_comments(texts: list[str]) -> list[dict]:
     """
-    Run sentiment classification on a list of comment strings.
-    Returns a list of dicts: {text, sentiment, score}.
-    - Empty/whitespace strings are skipped (labelled UNKNOWN, score 0.0).
-    - Truncation to 512 tokens is handled by the pipeline.
-    - Non-English text will be classified without crashing (results may be unreliable).
+    Run sentiment classification on a list of comment strings using batch inference.
+    Batching all comments in one model call is significantly faster than one call per comment.
     """
-    results = []
-    for text in texts:
-        if not text.strip():
-            results.append({"text": text, "sentiment": "UNKNOWN", "score": 0.0})
-            continue
+    # Separate empty strings — pipeline errors on them
+    valid_indices = [i for i, t in enumerate(texts) if t.strip()]
+    valid_texts = [texts[i] for i in valid_indices]
+
+    # Run all valid comments through the model in one batch
+    batch_outputs = {}
+    if valid_texts:
         try:
-            output = sentiment_pipeline(
-                text,
+            outputs = sentiment_pipeline(
+                valid_texts,
                 truncation=True,
                 max_length=512,
-            )[0]
-            results.append(
-                {
-                    "text": text,
-                    "sentiment": output["label"].upper(),  # normalize to POSITIVE/NEUTRAL/NEGATIVE
-                    "score": round(output["score"], 4),
-                }
+                batch_size=16,
             )
+            for idx, output in zip(valid_indices, outputs):
+                batch_outputs[idx] = output
         except Exception:
-            # Catch any unexpected model error so one bad comment doesn't kill the request
+            pass  # fall through to UNKNOWN for all
+
+    results = []
+    for i, text in enumerate(texts):
+        if i in batch_outputs:
+            out = batch_outputs[i]
+            results.append({
+                "text": text,
+                "sentiment": out["label"].upper(),
+                "score": round(out["score"], 4),
+            })
+        else:
             results.append({"text": text, "sentiment": "UNKNOWN", "score": 0.0})
     return results
 
