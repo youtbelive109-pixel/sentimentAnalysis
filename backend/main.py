@@ -79,10 +79,11 @@ def extract_video_id(url: str) -> str:
     )
 
 
-def fetch_comments(video_id: str, order: str = "time") -> list[str]:
+def fetch_comments(video_id: str, order: str = "time", max_results: int = 20) -> list[str]:
     """
-    Fetch up to 20 top-level comments for `video_id` via the YouTube Data API v3.
+    Fetch top-level comments for `video_id` via the YouTube Data API v3.
     order: "time" (most recent) or "relevance" (top comments).
+    max_results: number of comments to fetch (1–100).
     """
     youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
@@ -92,7 +93,7 @@ def fetch_comments(video_id: str, order: str = "time") -> list[str]:
             .list(
                 part="snippet",
                 videoId=video_id,
-                maxResults=20,
+                maxResults=max_results,
                 order=order,
                 textFormat="plainText",
             )
@@ -176,15 +177,16 @@ def classify_comments(texts: list[str]) -> list[dict]:
 def analyze(
     url: str = Query(..., description="YouTube video URL"),
     order: str = Query("time", description="Comment sort order: 'time' or 'relevance'"),
+    max_results: int = Query(20, ge=1, le=100, description="Number of comments to fetch (1–100)"),
 ):
     """
-    Accepts a YouTube URL, fetches 20 comments (sorted by time or relevance),
+    Accepts a YouTube URL, fetches comments (sorted by time or relevance),
     classifies their sentiment, and returns the results as JSON.
     """
     if order not in ("time", "relevance"):
         raise HTTPException(status_code=400, detail="order must be 'time' or 'relevance'")
     video_id = extract_video_id(url)
-    raw_comments = fetch_comments(video_id, order=order)
+    raw_comments = fetch_comments(video_id, order=order, max_results=max_results)
     classified = classify_comments(raw_comments)
     return {
         "video_id": video_id,

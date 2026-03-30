@@ -43,9 +43,24 @@ const SENTIMENT = {
 export default function Home() {
   const [url, setUrl] = useState('');
   const [order, setOrder] = useState<Order>('time');
+  const [maxResults, setMaxResults] = useState(20);
+  const [inputValue, setInputValue] = useState('20');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AnalyzeResponse | null>(null);
+
+  function handleCountInput(raw: string) {
+    setInputValue(raw);
+    const n = parseInt(raw, 10);
+    if (!isNaN(n) && n >= 1 && n <= 100) setMaxResults(n);
+  }
+
+  function commitCountInput() {
+    const n = parseInt(inputValue, 10);
+    if (isNaN(n) || n < 1) { setMaxResults(1); setInputValue('1'); }
+    else if (n > 100)       { setMaxResults(100); setInputValue('100'); }
+    else                    { setMaxResults(n); setInputValue(String(n)); }
+  }
 
   async function analyze() {
     if (!url.trim()) return;
@@ -54,7 +69,7 @@ export default function Home() {
     setData(null);
     try {
       const res = await fetch(
-        `https://sentimentanalysis-production-bcfe.up.railway.app/analyze?url=${encodeURIComponent(url.trim())}&order=${order}`
+        `https://sentimentanalysis-production-bcfe.up.railway.app/analyze?url=${encodeURIComponent(url.trim())}&order=${order}&max_results=${maxResults}`
       );
       const json = await res.json();
       if (!res.ok) {
@@ -109,6 +124,35 @@ export default function Home() {
             placeholder="https://www.youtube.com/watch?v=..."
             className="w-full bg-[#080808] border border-[#252525] rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-zinc-600 transition-colors"
           />
+          {/* Comment count */}
+          <div className="mt-4 px-1">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-zinc-500 font-medium">Comments</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={inputValue}
+                onChange={e => handleCountInput(e.target.value)}
+                onBlur={commitCountInput}
+                onKeyDown={e => e.key === 'Enter' && commitCountInput()}
+                className="w-14 bg-[#080808] border border-[#252525] rounded-lg px-2 py-1 text-xs text-zinc-200 text-center tabular-nums focus:outline-none focus:border-zinc-600 transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={100}
+              value={maxResults}
+              onChange={e => { const n = Number(e.target.value); setMaxResults(n); setInputValue(String(n)); }}
+              className="w-full h-1 rounded-full appearance-none cursor-pointer bg-[#252525] accent-white"
+            />
+            <div className="flex justify-between mt-1">
+              <span className="text-[10px] text-zinc-700">1</span>
+              <span className="text-[10px] text-zinc-700">100</span>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between mt-3">
             {/* Order toggle */}
             <div className="flex items-center bg-[#080808] border border-[#1f1f1f] rounded-lg p-0.5">
