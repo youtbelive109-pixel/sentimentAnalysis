@@ -3,4 +3,5 @@ uvicorn[standard]
 google-api-python-client
 python-dotenv
 transformers
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch
