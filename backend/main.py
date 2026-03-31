@@ -89,11 +89,12 @@ def extract_video_id(url: str) -> str:
     )
 
 
-def fetch_comments(video_id: str, order: str = "time", max_results: int = 20) -> list[str]:
+def fetch_comments(video_id: str, order: str = "time", max_results: int = 20) -> list[dict]:
     """
     Fetch top-level comments for `video_id` via the YouTube Data API v3.
     order: "time" (most recent) or "relevance" (top comments).
     max_results: number of comments to fetch (1–100).
+    Returns a list of dicts with keys: text, like_count.
     """
     youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
@@ -147,7 +148,10 @@ def fetch_comments(video_id: str, order: str = "time", max_results: int = 20) ->
     comments = []
     for item in items:
         top = item["snippet"]["topLevelComment"]["snippet"]
-        comments.append(top.get("textDisplay", ""))
+        comments.append({
+            "text": top.get("textDisplay", ""),
+            "like_count": top.get("likeCount", 0),
+        })
     return comments
 
 
@@ -209,7 +213,9 @@ def analyze(
         return cached
 
     raw_comments = fetch_comments(video_id, order=order, max_results=max_results)
-    classified = classify_batch(raw_comments)
+    classified = classify_batch([c["text"] for c in raw_comments])
+    for i, c in enumerate(raw_comments):
+        classified[i]["like_count"] = c["like_count"]
     result = {
         "video_id": video_id,
         "comment_count": len(classified),
@@ -256,9 +262,10 @@ async def analyze_stream(
         classified = []
         mini_batch_size = 8
         for batch_start in range(0, len(raw_comments), mini_batch_size):
-            batch = raw_comments[batch_start:batch_start + mini_batch_size]
-            results = await asyncio.to_thread(classify_batch, batch)
+            batch_meta = raw_comments[batch_start:batch_start + mini_batch_size]
+            results = await asyncio.to_thread(classify_batch, [c["text"] for c in batch_meta])
             for i, result in enumerate(results):
+                result["like_count"] = batch_meta[i]["like_count"]
                 classified.append(result)
                 payload = json.dumps({"index": batch_start + i, **result})
                 yield f"event: comment\ndata: {payload}\n\n"

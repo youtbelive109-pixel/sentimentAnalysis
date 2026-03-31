@@ -9,6 +9,7 @@ interface Comment {
   text: string;
   sentiment: Sentiment;
   score: number;
+  like_count: number;
 }
 
 const SENTIMENT = {
@@ -95,8 +96,8 @@ export default function Home() {
 
     es.addEventListener('comment', (e) => {
       resetTimeout();
-      const { text, sentiment, score } = JSON.parse((e as MessageEvent).data);
-      setComments(prev => [...prev, { text, sentiment, score }]);
+      const { text, sentiment, score, like_count } = JSON.parse((e as MessageEvent).data);
+      setComments(prev => [...prev, { text, sentiment, score, like_count }]);
     });
 
     es.addEventListener('summary', () => {
@@ -370,6 +371,12 @@ function CommentCard({ comment }: { comment: Comment }) {
           <span className="text-[11px] font-medium tabular-nums px-2 py-0.5 rounded-full bg-black/40 text-white border border-white/10">
             {(comment.score * 100).toFixed(1)}%
           </span>
+          {/* Like count */}
+          {comment.like_count > 0 && (
+            <span className="text-[11px] font-medium tabular-nums px-2 py-0.5 rounded-full bg-black/40 text-zinc-400 border border-white/10">
+              ♥ {comment.like_count.toLocaleString()}
+            </span>
+          )}
         </div>
       </div>
     </div>
