@@ -72,16 +72,35 @@ export default function Home() {
     const es = new EventSource(streamUrl);
     esRef.current = es;
 
+    // If no event arrives within 90 seconds, show a timeout error.
+    // Resets on every incoming event so it only fires during a genuine stall.
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const resetTimeout = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (!doneRef.current) {
+          setError('The backend stopped responding. Please try again.');
+          setLoading(false);
+          es.close();
+          esRef.current = null;
+        }
+      }, 90000);
+    };
+    resetTimeout();
+
     es.addEventListener('status', (e) => {
+      resetTimeout();
       try { setStatusMessage(JSON.parse((e as MessageEvent).data).message); } catch {}
     });
 
     es.addEventListener('comment', (e) => {
+      resetTimeout();
       const { text, sentiment, score } = JSON.parse((e as MessageEvent).data);
       setComments(prev => [...prev, { text, sentiment, score }]);
     });
 
     es.addEventListener('summary', () => {
+      clearTimeout(timeoutId);
       doneRef.current = true;
       setLoading(false);
       es.close();
@@ -90,6 +109,7 @@ export default function Home() {
 
     es.addEventListener('error', (e) => {
       if (doneRef.current) return; // already completed successfully, ignore connection close
+      clearTimeout(timeoutId);
       const data = (e as MessageEvent).data;
       if (data) {
         try { setError(JSON.parse(data).detail ?? 'Something went wrong.'); }

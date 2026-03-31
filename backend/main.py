@@ -235,30 +235,35 @@ async def analyze_stream(
     video_id = extract_video_id(url)
 
     async def event_generator():
-        loop = asyncio.get_event_loop()
+        # 2 KB of padding forces Railway's proxy to flush its buffer immediately
+        # instead of holding the response until the stream ends.
+        yield ": " + " " * 2048 + "\n\n"
 
         yield f"event: status\ndata: {json.dumps({'message': 'Fetching comments\u2026'})}\n\n"
 
-        # fetch_comments is synchronous — offload to thread pool so we don't block the event loop
         try:
-            raw_comments = await loop.run_in_executor(
-                None, lambda: fetch_comments(video_id, order=order, max_results=max_results)
+            raw_comments = await asyncio.to_thread(
+                fetch_comments, video_id, order, max_results
             )
         except HTTPException as e:
             yield f"event: error\ndata: {json.dumps({'detail': e.detail})}\n\n"
             return
 
+        # Ping after the YouTube fetch so the proxy knows the connection is still alive
+        yield ": ping\n\n"
         yield f"event: status\ndata: {json.dumps({'message': 'Classifying comments\u2026'})}\n\n"
 
         classified = []
         mini_batch_size = 8
         for batch_start in range(0, len(raw_comments), mini_batch_size):
             batch = raw_comments[batch_start:batch_start + mini_batch_size]
-            results = await loop.run_in_executor(None, classify_batch, batch)
+            results = await asyncio.to_thread(classify_batch, batch)
             for i, result in enumerate(results):
                 classified.append(result)
                 payload = json.dumps({"index": batch_start + i, **result})
                 yield f"event: comment\ndata: {payload}\n\n"
+            # Ping after each batch: resets Railway's idle timeout and flushes the buffer
+            yield ": ping\n\n"
 
         pos = sum(1 for c in classified if c["sentiment"] == "POSITIVE")
         neg = sum(1 for c in classified if c["sentiment"] == "NEGATIVE")
