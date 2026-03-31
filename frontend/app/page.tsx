@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Sentiment = 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | 'UNKNOWN';
 type Order = 'time' | 'relevance';
@@ -11,17 +11,14 @@ interface Comment {
   score: number;
 }
 
-interface AnalyzeResponse {
-  comment_count: number;
-  comments: Comment[];
-}
-
 const SENTIMENT = {
   POSITIVE: { label: 'Positive', rgb: '16, 185, 129',  dot: 'bg-emerald-400' },
   NEGATIVE: { label: 'Negative', rgb: '239, 68, 68',   dot: 'bg-red-400'     },
   NEUTRAL:  { label: 'Neutral',  rgb: '245, 158, 11',  dot: 'bg-amber-400'   },
   UNKNOWN:  { label: 'Unknown',  rgb: '113, 113, 122', dot: 'bg-zinc-500'    },
 };
+
+const BACKEND = 'https://sentimentanalysis-production-bcfe.up.railway.app';
 
 export default function Home() {
   const [url, setUrl] = useState('');
@@ -30,7 +27,17 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('20');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<AnalyzeResponse | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [totalExpected, setTotalExpected] = useState(20);
+  const esRef = useRef<EventSource | null>(null);
+  const doneRef = useRef(false);
+
+  // Wake the Railway container while the user is still on the page
+  useEffect(() => {
+    fetch(`${BACKEND}/health`).catch(() => {});
+    return () => { esRef.current?.close(); };
+  }, []);
 
   function handleCountInput(raw: string) {
     setInputValue(raw);
@@ -45,36 +52,65 @@ export default function Home() {
     else                    { setMaxResults(n); setInputValue(String(n)); }
   }
 
-  async function analyze() {
+  function analyze() {
     if (!url.trim()) return;
+
+    // Close any in-flight connection
+    if (esRef.current) {
+      esRef.current.close();
+      esRef.current = null;
+    }
+
+    doneRef.current = false;
     setLoading(true);
     setError(null);
-    setData(null);
-    try {
-      const res = await fetch(
-        `https://sentimentanalysis-production-bcfe.up.railway.app/analyze?url=${encodeURIComponent(url.trim())}&order=${order}&max_results=${maxResults}`
-      );
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.detail ?? 'Something went wrong.');
-      } else {
-        setData(json);
-      }
-    } catch {
-      setError('Could not reach the backend.');
-    } finally {
+    setComments([]);
+    setStatusMessage('Connecting\u2026');
+    setTotalExpected(maxResults);
+
+    const streamUrl = `${BACKEND}/analyze/stream?url=${encodeURIComponent(url.trim())}&order=${order}&max_results=${maxResults}`;
+    const es = new EventSource(streamUrl);
+    esRef.current = es;
+
+    es.addEventListener('status', (e) => {
+      try { setStatusMessage(JSON.parse((e as MessageEvent).data).message); } catch {}
+    });
+
+    es.addEventListener('comment', (e) => {
+      const { text, sentiment, score } = JSON.parse((e as MessageEvent).data);
+      setComments(prev => [...prev, { text, sentiment, score }]);
+    });
+
+    es.addEventListener('summary', () => {
+      doneRef.current = true;
       setLoading(false);
-    }
+      es.close();
+      esRef.current = null;
+    });
+
+    es.addEventListener('error', (e) => {
+      if (doneRef.current) return; // already completed successfully, ignore connection close
+      const data = (e as MessageEvent).data;
+      if (data) {
+        try { setError(JSON.parse(data).detail ?? 'Something went wrong.'); }
+        catch { setError('Something went wrong.'); }
+      } else {
+        // Connection-level error (network drop, Railway timeout, non-200 response)
+        setError('Connection lost. The backend may have timed out.');
+      }
+      setLoading(false);
+      es.close();
+      esRef.current = null;
+    });
   }
 
-  const stats = data
+  const stats = comments.length > 0
     ? (() => {
-        const c = data.comments;
-        const total = c.length;
-        const pos = c.filter(x => x.sentiment === 'POSITIVE').length;
-        const neg = c.filter(x => x.sentiment === 'NEGATIVE').length;
-        const neu = c.filter(x => x.sentiment === 'NEUTRAL').length;
-        const avgConf = c.reduce((s, x) => s + x.score, 0) / total;
+        const total = comments.length;
+        const pos = comments.filter(x => x.sentiment === 'POSITIVE').length;
+        const neg = comments.filter(x => x.sentiment === 'NEGATIVE').length;
+        const neu = comments.filter(x => x.sentiment === 'NEUTRAL').length;
+        const avgConf = comments.reduce((s, x) => s + x.score, 0) / total;
         return { total, pos, neg, neu, avgConf };
       })()
     : null;
@@ -164,11 +200,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Loading */}
+        {/* Loading indicator */}
         {loading && (
           <div className="mt-12 flex flex-col items-center gap-3 text-zinc-600">
             <div className="w-5 h-5 border-2 border-zinc-800 border-t-zinc-500 rounded-full animate-spin" />
-            <p className="text-xs">Fetching and classifying comments…</p>
+            <p className="text-xs">{statusMessage}</p>
+            {comments.length > 0 && (
+              <p className="text-xs tabular-nums text-zinc-700">
+                {comments.length} / {totalExpected} classified
+              </p>
+            )}
           </div>
         )}
 
@@ -180,14 +221,14 @@ export default function Home() {
           </div>
         )}
 
-        {/* Results */}
-        {data && stats && (
+        {/* Results — render progressively as comments stream in */}
+        {stats && (
           <div className="mt-10 space-y-6">
 
             {/* Summary */}
             <div>
               <p className="text-[11px] text-zinc-600 uppercase tracking-widest font-semibold mb-3">
-                Summary · {stats.total} comments
+                Summary · {stats.total} comment{stats.total !== 1 ? 's' : ''}{loading ? '…' : ''}
               </p>
 
               {/* Proportion bar */}
@@ -246,7 +287,7 @@ export default function Home() {
                 Comments
               </p>
               <div className="space-y-2">
-                {data.comments.map((comment, i) => (
+                {comments.map((comment, i) => (
                   <CommentCard key={i} comment={comment} />
                 ))}
               </div>
