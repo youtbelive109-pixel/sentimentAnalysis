@@ -6,15 +6,15 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Environment variables — never commit secrets
-commentSentiment/backend/.env
+# Environment variables
+backend/.env
 
 # HuggingFace model cache
 .cache/
 
 # Next.js
-commentSentiment/frontend/.next/
-commentSentiment/frontend/node_modules/
+frontend/.next/
+frontend/node_modules/
 
 # OS
 .DS_Store
