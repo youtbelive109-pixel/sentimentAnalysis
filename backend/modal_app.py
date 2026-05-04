@@ -68,7 +68,7 @@ class SentimentAPI:
         return {"status": "ok", "model": "distilbert-base-uncased-finetuned-sst-2-english"}
 
     @modal.web_endpoint(method="GET")
-    def analyze(self, video_id: str = "28quhLmJIdM", max_messages: int = 50):
+    def analyze(self, video_id: str = "HHEAW6sJ28w", max_messages: int = 50):
         """
         Fetch live chat messages from a YouTube stream, analyze sentiment,
         and return aggregated results. Each call fetches a fresh batch.

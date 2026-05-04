@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const MODAL_BACKEND =
   "https://bsissa22--youtube-live-sentiment-sentimentapi-analyze.modal.run";
-const VIDEO_ID = "28quhLmJIdM";
+const VIDEO_ID = "HHEAW6sJ28w";
 
 // Fallback mock data generators (used when Modal backend is unreachable or stream is offline)
 const AUTHORS = [
