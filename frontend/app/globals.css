@@ -1,18 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --background: #080808;
-  --foreground: #e2e2e2;
+  --bg-primary: #F2F0EB;
+  --bg-secondary: #EDEAE4;
+  --text-primary: #1C1C1B;
+  --accent-green: #2A382E;
+  --accent-gold: #C9A690;
+  --accent-lime: #D4E157;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.serif {
+  font-family: 'Fraunces', serif;
+  letter-spacing: -0.03em;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-entry {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Emoji mart overrides */
+em-emoji-picker {
+  --rgb-background: 242, 240, 235;
+  --rgb-input: 255, 255, 255;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.15) !important;
 }

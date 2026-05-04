@@ -1,0 +1,16 @@
+{
+  "name": "zenith-chat-server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "partykit dev",
+    "deploy": "partykit deploy"
+  },
+  "dependencies": {
+    "partykit": "^0.0.108",
+    "partysocket": "^1.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
