@@ -33,6 +33,8 @@ interface SentimentData {
   scores: { positive: number; negative: number; neutral: number; total: number };
   percentages: { positive: number; negative: number; neutral: number };
   mood: string;
+  data_source?: string;
+  modal_error?: string;
   messages: Message[];
   super_chats: { author: string; text: string; time: string; amount: string }[];
   charts: {
@@ -172,6 +174,14 @@ export default function Dashboard() {
             />
             {data.is_live ? "STREAM_LIVE" : "STREAM_OFFLINE"}
           </div>
+          {data.data_source && (
+            <div className="hidden md:block mono text-[9px] px-2 py-0.5" style={{
+              background: data.data_source.includes("live") ? `${COLORS.positive}20` : `${COLORS.accent}20`,
+              color: data.data_source.includes("live") ? COLORS.positive : COLORS.accent,
+            }}>
+              SRC: {data.data_source.toUpperCase()}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <div className="mono text-[10px] px-3 py-1" style={{ background: `${COLORS.lime}40`, color: COLORS.green }}>
