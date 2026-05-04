@@ -1,18 +1,114 @@
 @import "tailwindcss";
 
-:root {
-  --background: #080808;
-  --foreground: #e2e2e2;
+@theme inline {
+  --color-zenith: #F2F0EB;
+  --color-zenith-dark: #1C1C1B;
+  --color-zenith-green: #2A382E;
+  --color-zenith-accent: #C9A690;
+  --color-zenith-lime: #D4E157;
+  --color-zenith-card: #EDEAE4;
+  --color-zenith-border: rgba(0, 0, 0, 0.1);
+  --color-zenith-muted: #6B6B6B;
+  --color-pos: #2A7D4F;
+  --color-neg: #C0392B;
+  --color-neutral: #B8860B;
+  --font-inter: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  background: #F2F0EB;
+  color: #1C1C1B;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.serif {
+  font-family: 'Fraunces', serif;
+  letter-spacing: -0.03em;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+}
+
+.font-inter {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-entry {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-slide {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.pulse-live {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Card style */
+.zenith-card {
+  background: #F2F0EB;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.zenith-card:hover {
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.12);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
 }
